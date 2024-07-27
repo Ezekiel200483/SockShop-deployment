@@ -1,9 +1,0 @@
-# local .terraform directory
-.terraform/
-
-# .tfstate files
-*.tfstate
-*.tfstate.*
-
-# .tfvars files may contain sensitive data
-*.tfvars
