@@ -25,26 +25,27 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: install kubectl
+      - name: Install kubectl
         run: |
           sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
-      # install terraform
-      - name: install terraform cli
+      - name: Install Terraform CLI
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
         run: terraform init
+        working-directory: ./terraform
 
       - name: Terraform Plan
         id: plan
         run: terraform plan
+        working-directory: ./terraform
 
-      # tf apply and deploy to EKS
-      - name: Terraform apply
+      - name: Terraform Apply
         id: apply
         run: terraform apply --auto-approve
+        working-directory: ./terraform
 
       - name: AWS EKS with Kubectl
         uses: giovannirossini/aws-eks@v1.0.1
@@ -55,3 +56,5 @@ jobs:
           cluster-name: "myapp-eks-cluster"
           command: |
             kubectl apply -f deployment.yaml
+
+
