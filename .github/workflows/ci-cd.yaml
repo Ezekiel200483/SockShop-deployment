@@ -55,7 +55,7 @@ jobs:
           aws-region: "us-east-1"
           cluster-name: "socksShop-eks-D8HAX"
           command: |
-            kubectl apply -f deployment.yaml
-            
+            kubectl apply -f kubernetes/deployment.yaml
+
 
 
