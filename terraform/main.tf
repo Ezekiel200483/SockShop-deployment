@@ -47,60 +47,6 @@ module "vpc" {
   }
 }
 
-# Security Group for EKS Control Plane
-resource "aws_security_group" "eks_control_plane" {
-  name        = "${local.cluster_name}-control-plane-sg"
-  description = "Security group for EKS control plane"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress {
-    description = "Allow HTTPS traffic from anywhere"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    description = "Allow all outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-# Security Group for EKS Worker Nodes
-resource "aws_security_group" "eks_worker_nodes" {
-  name        = "${local.cluster_name}-worker-nodes-sg"
-  description = "Security group for EKS worker nodes"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress {
-    description = "Allow traffic from control plane"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    security_groups = [aws_security_group.eks_control_plane.id]
-  }
-
-  ingress {
-    description = "Allow all traffic within the VPC"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = [module.vpc.vpc_cidr_block]
-  }
-
-  egress {
-    description = "Allow all outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "19.15.3"
@@ -112,12 +58,9 @@ module "eks" {
   subnet_ids                     = module.vpc.private_subnets
   cluster_endpoint_public_access = true
 
-  cluster_security_group_id = aws_security_group.eks_control_plane.id
-
   eks_managed_node_group_defaults = {
     ami_type                    = "AL2_x86_64"
     associate_public_ip_address = true
-    security_groups             = [aws_security_group.eks_worker_nodes.id]
   }
 
   eks_managed_node_groups = {

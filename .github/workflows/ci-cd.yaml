@@ -1,7 +1,5 @@
 name: Terraform and Deploy to EKS
 
-# This workflow is triggered on push events to the main branch
-
 on:
   push:
     branches:
@@ -22,6 +20,10 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
 
       - name: Install kubectl
         run: |
@@ -45,17 +47,8 @@ jobs:
         run: terraform apply --auto-approve
         working-directory: ./terraform
 
-  deploy:
-    name: Deploy to EKS
-    runs-on: ubuntu-latest
-    needs: terraform
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: AWS EKS with Kubectl
+        uses: giovannirossini/aws-eks@v1.0.1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
