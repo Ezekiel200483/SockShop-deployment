@@ -1,5 +1,7 @@
 name: Terraform and Deploy to EKS
 
+# This workflow is triggered on push events to the main branch
+
 on:
   push:
     branches:
@@ -20,10 +22,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
 
       - name: Install kubectl
         run: |
@@ -47,15 +45,33 @@ jobs:
         run: terraform apply --auto-approve
         working-directory: ./terraform
 
-      - name: AWS EKS with Kubectl
-        uses: giovannirossini/aws-eks@v1.0.1
+  deploy:
+    name: Deploy to EKS
+    runs-on: ubuntu-latest
+    needs: terraform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: "us-east-1"
-          cluster-name: "socksShop-eks-D8HAX"
-          command: |
-            kubectl apply -f kubernetes/deployment.yaml
+          aws-region: us-east-1
+
+      - name: Install kubectl
+        run: |
+          sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+      - name: Set up kubeconfig
+        run: |
+          aws eks update-kubeconfig --name=socksShop-eks-D8HAX --region=us-east-1
+
+      - name: Deploy to EKS
+        run: kubectl apply -f kubernetes/deployment.yaml
 
 
 
